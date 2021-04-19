@@ -30,7 +30,7 @@ async def generate_haiku(params: CreateHaikuRequest):
     w1, w2 = params.starter_words.split(" ")
     response_body = {
         "starter_words": [w1, w2],
-        "haiku": f"{w1.capitalize()} {w2} is all you need in life.",
+        "haiku": f"{w1.capitalize()} {w2} \n is all you \n need in life.",
         "model_version": ""
     }
     return response_body
