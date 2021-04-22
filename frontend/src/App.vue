@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     <Navbar></Navbar>
+<!--    <TextBubble :text="'Hello and Welcome!'"></TextBubble>-->
     <UserInput></UserInput>
     <div class="app-background"></div>
   </div>
@@ -9,12 +10,14 @@
 <script>
 import UserInput from "@/components/UserInput";
 import Navbar from "@/components/Navbar";
+// import TextBubble from "@/components/TextBubble";
 
 export default {
   name: 'App',
   components: {
     UserInput,
     Navbar,
+    // TextBubble
   }
 }
 </script>

@@ -8,12 +8,6 @@
           </b-navbar-item>
         </template>
         <template #end>
-          <b-navbar-item href="#" class="custom-navbar-item">
-            Create
-          </b-navbar-item>
-          <b-navbar-item href="#" class="custom-navbar-item">
-            About
-          </b-navbar-item>
         </template>
     </b-navbar>
 </template>
@@ -28,13 +22,15 @@ export default {
 .custom-navbar {
    background: $empty-space-color;
    color: $empty-space-color;
-   border-bottom: 3px solid $primary-color;
-   box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
+   //border-bottom: 3px solid $primary-color;
+   //box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
    .custom-navbar-item {
      color: $primary-color;
      font-size: 2rem;
      font-weight: bold;
      transition: 0.25s;
+     padding-bottom: 1.5rem;
+     border-bottom: 5px solid $primary-color;
      &:hover {
        background-color: $empty-space-color;
        color: $accent-color;
