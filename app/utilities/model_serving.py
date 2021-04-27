@@ -25,6 +25,25 @@ def _get_model_spec(
     return ModelSpec(name=model_name, signature_name=signature_name)
 
 
+def _get_model_prediction(
+        inputs: np.ndarray,
+        model_uri: str,
+        model_name: str,
+        input_layer_name: str,
+        version_label: Optional[str] = None,
+        version: Optional[int] = None,
+        timeout: Optional[float] = 1.0
+):
+    serving_stub, channel = _get_serving_stub_and_channel(model_uri)
+    model_spec = _get_model_spec(model_name, "serving_default", version_label, version)
+
+    request = predict_pb2.PredictRequest(model_spec=model_spec)
+    request.inputs[input_layer_name].CopyFrom(make_tensor_proto(inputs.astype(np.float32), shape=inputs.shape))
+    result = serving_stub.Predict(request, timeout)
+    channel.close()
+    return result
+
+
 def _get_model_metadata(
         model_uri: str,
         model_name: str,
@@ -47,26 +66,7 @@ def _get_model_metadata(
     return _metadata
 
 
-def _get_model_prediction(
-        inputs: np.ndarray,
-        model_uri: str,
-        model_name: str,
-        input_layer_name: str,
-        version_label: Optional[str] = None,
-        version: Optional[int] = None,
-        timeout: Optional[float] = 1.0
-):
-    serving_stub, channel = _get_serving_stub_and_channel(model_uri)
-    model_spec = _get_model_spec(model_name, "serving_default", version_label, version)
-
-    request = predict_pb2.PredictRequest(model_spec=model_spec)
-    request.inputs[input_layer_name].CopyFrom(make_tensor_proto(inputs.astype(np.float32), shape=inputs.shape))
-    result = serving_stub.Predict(request, timeout)
-    channel.close()
-    return result
-
-
-def get_model_info(
+def _get_model_info(
         info_to_fetch: List[str],
         model_uri: str,
         model_name: str,
@@ -76,39 +76,79 @@ def get_model_info(
         *args,
         **kwargs
 ):
-    def _fetch_input_names() -> List[str]:
-        inputs_ = signature_def[signature_name]['inputs']
-        return list(inputs_.keys())
+    def _fetch_inputs() -> Dict:
+        return signature_def[signature_name]['inputs']
 
-    def _fetch_output_names() -> List[str]:
-        outputs_ = signature_def[signature_name]
-        return list(outputs_.keys())
+    def _fetch_outputs() -> Dict:
+        return signature_def[signature_name]['outputs']
 
-    def _fetch_input_sizes() -> List[int]:
-        pass
+    def _fetch_input_names(return_inputs: bool = False) -> Union[List[str], Tuple[List[str], Dict]]:
+        inputs_ = _fetch_inputs()
+        input_names_ = list(inputs_.keys())
+        if return_inputs:
+            return input_names_, inputs_
+        return input_names_
 
-    metadata = _get_model_metadata(model_uri, model_name, version_label, version, )
+    def _fetch_output_names(return_outputs: bool = False) -> Union[List[str], Tuple[List[str], Dict]]:
+        outputs_ = _fetch_outputs()
+        output_names_ = list(outputs_.keys())
+        if return_outputs:
+            return output_names_, outputs_
+        return output_names_
+
+    def _fetch_input_sizes() -> Dict[str, int]:
+        input_names_, inputs_ = _fetch_input_names(return_inputs=True)
+        input_sizes = {}
+        for input_name in input_names_:
+            n = int(inputs_[input_name]['tensorShape']['dim'][-1]['size'])
+            input_sizes[input_name] = n
+        return input_sizes
+
+    def _fetch_output_sizes() -> Dict[str, int]:
+        output_names_, outputs_ = _fetch_output_names(return_outputs=True)
+        output_sizes = {}
+        for output_name in output_names_:
+            n = int(outputs_[output_name]['tensorShape']['dim'][-1]['size'])
+            output_sizes[output_name] = n
+        return output_sizes
+
+    metadata = _get_model_metadata(
+        model_uri, model_name, version_label, version, signature_name, *args, **kwargs
+    )
     signature_def = metadata['metadata']['signature_def']['signatureDef']
 
     info_function_map = {
-        "input_name":  _fetch_input_names
+        "input_names":  _fetch_input_names,
+        "output_names": _fetch_output_names,
+        "input_sizes": _fetch_input_sizes,
+        "output_sizes": _fetch_output_sizes,
     }
+
+    result = {}
+    for info_type in info_to_fetch:
+        f = info_function_map.get(info_type)
+        if not f:
+            raise ValueError(f"{info_type} is not a valid model info request type. Must be one of "
+                             f"{list(info_function_map.keys())}")
+        result[info_type] = f()
+
+    return result
 
 
 def get_input_name(
         model_uri: str,
         model_name: str,
         version_label: Optional[str] = None,
-        version: Optional[int] = None
+        version: Optional[int] = None,
+        *args,
+        **kwargs
 ):
-    metadata = _get_model_metadata(model_uri, model_name, version_label, version)
-    signature_def = metadata['metadata']['signature_def']['signatureDef']
-    inputs = signature_def['serving_default']['inputs']
-
-    return list(inputs.keys())[0]
+    info_type = 'input_names'
+    input_names = _get_model_info([info_type], model_uri, model_name, version_label, version, *args, **kwargs)
+    return input_names[info_type]
 
 
-def get_output_size(
+def get_input_size(
         model_uri: str,
         model_name: str,
         output_name: str,
@@ -128,13 +168,29 @@ def get_output_name(
         model_uri: str,
         model_name: str,
         version_label: Optional[str] = None,
-        version: Optional[int] = None
+        version: Optional[int] = None,
+        *args,
+        **kwargs
 ):
+    info_type = 'output_names'
+    input_names = _get_model_info([info_type], model_uri, model_name, version_label, version, *args, **kwargs)
+    return input_names[info_type]
+
+
+def get_output_size(
+        model_uri: str,
+        model_name: str,
+        output_name: str,
+        version_label: Optional[str] = None,
+        version: Optional[int] = None
+) -> int:
     metadata = _get_model_metadata(model_uri, model_name, version_label, version)
+
     signature_def = metadata['metadata']['signature_def']['signatureDef']
     outputs = signature_def['serving_default']['outputs']
+    n = int(outputs[output_name]['tensorShape']['dim'][-1]['size'])
 
-    return list(outputs.keys())[0]
+    return n
 
 
 def get_model_input_output_names(
