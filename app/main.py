@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from utilities import model_serving
+from utilities import haiku_utils
 
 app = FastAPI()
 
@@ -28,5 +28,5 @@ async def root():
 
 @app.post("/haiku/create")
 async def generate_haiku(params: CreateHaikuRequest):
-    w1, w2 = params.starter_words.split(" ")
-    return response_body
+    generated_haiku = haiku_utils.generate_haiku(params.starter_words)
+    return generated_haiku
