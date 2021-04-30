@@ -8,12 +8,11 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 
 def get_haiku_tokenizer(
-        tokenizer_json_fp: str = "tokenizers/haiku_tokenizer_april-28-2021.json"
+        tokenizer_json_fp: str = "app/utilities/tokenizers/haiku_tokenizer_april-28-2021.json"
 ):
     # at the moment we will store the tokenizer configuration
     # TODO: figure out a way to store tokenizer configuration in a in-memory database (i.e. Redis)
     # TODO: or some other more scalable approach
-
     with open(tokenizer_json_fp) as f:
         tokenizer_string = json.load(f)
 

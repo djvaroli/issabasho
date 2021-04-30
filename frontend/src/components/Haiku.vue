@@ -2,7 +2,7 @@
   <div class="generated-haiku">
     <textarea v-model="content">
     </textarea>
-    <b-input v-model="authorName" placeholder="your pseudonym"></b-input>
+<!--    <b-input v-model="authorName" placeholder="your pseudonym"></b-input>-->
   </div>
 </template>
 
@@ -23,9 +23,9 @@
 <style scoped lang="scss">
   textarea {
     padding: 1rem;
-    font-size: 2.5rem;
-    height: 10rem;
-    width: auto;
+    font-size: 2rem;
+    height: 40rem;
+    width: 20rem;
     border: none;
     text-align: center;
     resize: none;

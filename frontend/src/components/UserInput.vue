@@ -16,22 +16,60 @@
       {{ buttonText }}
     </b-button>
     <div class="generated-haiku">
-      <textarea readonly v-model="haikuText"></textarea>
+      <b-loading :is-full-page="false" v-model="isHaikuLoading" :can-cancel="false">
+        <b-icon
+            pack="fas"
+            icon="circle-notch"
+            size="is-large"
+            custom-class="fa-spin">
+        </b-icon>
+      </b-loading>
+      <transition name="fade">
+        <textarea readonly v-if="haikuText" v-model="haikuText"></textarea>
+      </transition>
+      <div class="save-haiku" v-if="haikuText">
+        <b-button @click="showSaveHaikuModel = true">
+          Save Haiku
+        </b-button>
+
+        <b-modal
+            v-model="showSaveHaikuModel"
+            has-modal-card
+            trap-focus
+            :destroy-on-hide="false"
+            aria-role="dialog"
+            aria-label="Example Modal"
+            aria-modal>
+          <template #default="props">
+            <SaveHaikuModal v-bind="formProps" @close="props.close"></SaveHaikuModal>
+          </template>
+        </b-modal>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios';
+import SaveHaikuModal from "@/components/SaveHaikuModal";
 
 export default {
   name: "UserInput.vue",
+  components: {
+    SaveHaikuModal
+  },
   data() {
     return {
       userInput: "",
       buttonText: "Finish Haiku",
       haikuText: "",
-      startOverOnNextClick: false
+      startOverOnNextClick: false,
+      isHaikuLoading: false,
+      showSaveHaikuModel: false,
+      formProps: {
+        email: 'evan@you.com',
+        password: 'testing'
+      }
     }
   },
   methods: {
@@ -42,6 +80,7 @@ export default {
         this.startOverOnNextClick = false;
         this.userInput = "";
       } else {
+        this.isHaikuLoading = true;
         axios.post("http://localhost:8000/haiku/create", {
           "starter_words": this.userInput
         })
@@ -49,6 +88,7 @@ export default {
           this.haikuText = response.data.haiku;
           this.buttonText = "Start over"
           this.startOverOnNextClick = true;
+          this.isHaikuLoading = false;
         });
       }
     }
@@ -90,8 +130,8 @@ export default {
     color: $primary-color;
     border: none;
     padding: 1rem;
-    font-size: 3.5rem;
-    height: 20rem;
+    font-size: 3rem;
+    height: 30rem;
     width: auto;
     text-align: center;
     resize: none;
@@ -99,5 +139,12 @@ export default {
     &:focus {
       outline: none;
     }
+  }
+
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity .7s;
+  }
+  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+    opacity: 0;
   }
 </style>

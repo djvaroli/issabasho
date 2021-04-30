@@ -1,7 +1,8 @@
-import nlp_utils
-import model_serving
-
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+import numpy as np
+
+from app.utilities import nlp_utils
+from app.utilities import model_serving
 
 
 def generate_haiku(
@@ -21,7 +22,7 @@ def generate_haiku(
         predicted_scores = model_serving.get_haiku_scores(encoded_input_padded, model_uri, model_name)[0]
         best_word_ix = predicted_scores.argmax()
         if best_word_ix == 0:
-            break
+            best_word_ix = np.random.choice(np.arange(0, predicted_scores.shape[0]))
         next_predicted_word = tokenizer.index_word[best_word_ix]
         generated_haiku += f" {next_predicted_word}"
 
