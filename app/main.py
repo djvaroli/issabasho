@@ -1,8 +1,13 @@
+from datetime import datetime as dt
+import time
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
-from app.utilities import haiku_utils
+
+from app.utilities import haiku_utils, redis_utils
+from app.utilities.pydantic_models import *
+
 
 app = FastAPI()
 
@@ -15,14 +20,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-class CreateHaikuRequest(BaseModel):
-    starter_words: str = "word word"
-
-class SaveHaikuRequest(BaseModel):
-    pseudonym: str
-    rating: int
 
 
 @app.get("/")
@@ -42,14 +39,13 @@ async def generate_haiku(params: CreateHaikuRequest):
 
 
 @app.post("/haiku/save")
-async def save_haiku(params: SaveHaikuRequest):
-    author_pseudonym = params.pseudonym
-    rating = params.rating
+async def save_haiku(haiku_data: SaveHaikuRequest):
+    status = 1
 
-    response = {
-        "pseudonym": author_pseudonym,
-        "rating": rating,
-        "status": "success"
-    }
+    try:
+        redis_utils.store_haiku_rating(haiku_data)
+    except Exception as e:
+        status = 0
 
+    response = {"status": status}
     return response

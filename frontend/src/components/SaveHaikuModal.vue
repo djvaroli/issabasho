@@ -48,6 +48,9 @@ import axios from 'axios';
 
 export default {
   name: "SaveHaikuModal",
+  props: {
+    "haikuText": String
+  },
   data() {
     return {
       pseudonym: "Soaring Albatross",
@@ -59,10 +62,27 @@ export default {
     submitHaikuData() {
       axios.post("http://localhost:8000/haiku/save", {
         "pseudonym": this.pseudonym,
-        "rating": this.haikuRating
+        "rating": this.haikuRating,
+        "haiku_text": this.haikuText
       })
       .then((response) => {
-        console.log(response);
+        if (response.data.status === 1) {
+          this.$emit('close');
+          this.$buefy.toast.open({
+            duration: 3000,
+            message: "Your Haiku was saved! Tune in later when the gallery page is up!",
+            position: 'is-bottom',
+            type: 'is-success'
+          })
+        } else {
+          this.$emit('close');
+          this.$buefy.toast.open({
+            duration: 3000,
+            message: "Something went wrong. :(",
+            position: 'is-bottom',
+            type: 'is-danger'
+          })
+        }
       })
     }
   }

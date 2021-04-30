@@ -41,7 +41,7 @@
             aria-label="Example Modal"
             aria-modal>
           <template #default="props">
-            <SaveHaikuModal v-bind="formProps" @close="props.close"></SaveHaikuModal>
+            <SaveHaikuModal @close="props.close" :haikuText="haikuText"></SaveHaikuModal>
           </template>
         </b-modal>
       </div>
@@ -65,11 +65,7 @@ export default {
       haikuText: "",
       startOverOnNextClick: false,
       isHaikuLoading: false,
-      showSaveHaikuModel: false,
-      formProps: {
-        email: 'evan@you.com',
-        password: 'testing'
-      }
+      showSaveHaikuModel: false
     }
   },
   methods: {
